@@ -1,5 +1,16 @@
 <?php
 
+// Define the log file path
+$logFile = 'database_update.log';
+
+// Function to log messages with date and time
+function logMessage($message) {
+    global $logFile;
+    $date = date('Y-m-d H:i:s');
+    $formattedMessage = "[$date] $message\n";
+    file_put_contents($logFile, $formattedMessage, FILE_APPEND);
+}
+
 // Database connection details
 require_once 'dbconnectconf.php';
 
@@ -8,18 +19,34 @@ $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    $errorMessage = "Connection failed: " . $conn->connect_error;
+    logMessage($errorMessage);
+    die($errorMessage);
 }
+
+logMessage("Database connection established successfully.");
 
 // Read JSON data from file
 $jsonData = file_get_contents('vehicles.json');
+
+if ($jsonData === false) {
+    $errorMessage = "Error reading JSON data from file.";
+    logMessage($errorMessage);
+    die($errorMessage);
+}
+
+logMessage("JSON data read from file successfully.");
 
 // Decode JSON data
 $data = json_decode($jsonData, true);
 
 if (json_last_error() !== JSON_ERROR_NONE) {
-    die("Error decoding JSON: " . json_last_error_msg());
+    $errorMessage = "Error decoding JSON: " . json_last_error_msg();
+    logMessage($errorMessage);
+    die($errorMessage);
 }
+
+logMessage("JSON data decoded successfully.");
 
 // Prepare SQL statement
 $stmt = $conn->prepare("
@@ -53,35 +80,39 @@ $stmt = $conn->prepare("
 ");
 
 if (!$stmt) {
-    die("Prepare failed: " . $conn->error);
+    $errorMessage = "Prepare failed: " . $conn->error;
+    logMessage($errorMessage);
+    die($errorMessage);
 }
+
+logMessage("SQL statement prepared successfully.");
 
 // Loop through the data and insert/update the database
 foreach ($data['data'] as $vehicle) {
     // Handle missing keys with default values
-    $externalIds_samsara_serial = isset($vehicle['externalIds_samsara_serial']) ? $vehicle['externalIds_samsara_serial'] : null;
-    $externalIds_samsara_vin = isset($vehicle['externalIds_samsara_vin']) ? $vehicle['externalIds_samsara_vin'] : null;
-    $gateway_serial = isset($vehicle['gateway_serial']) ? $vehicle['gateway_serial'] : null;
-    $gateway_model = isset($vehicle['gateway_model']) ? $vehicle['gateway_model'] : null;
-    $harshAccelerationSettingType = isset($vehicle['harshAccelerationSettingType']) ? $vehicle['harshAccelerationSettingType'] : null;
-    $id = isset($vehicle['id']) ? $vehicle['id'] : null;
-    $licensePlate = isset($vehicle['licensePlate']) ? $vehicle['licensePlate'] : null;
-    $make = isset($vehicle['make']) ? $vehicle['make'] : null;
-    $model = isset($vehicle['model']) ? $vehicle['model'] : null;
-    $name = isset($vehicle['name']) ? $vehicle['name'] : null;
-    $notes = isset($vehicle['notes']) ? $vehicle['notes'] : null;
-    $serial = isset($vehicle['serial']) ? $vehicle['serial'] : null;
-    $staticAssignedDriver_id = isset($vehicle['staticAssignedDriver_id']) ? $vehicle['staticAssignedDriver_id'] : null;
-    $staticAssignedDriver_name = isset($vehicle['staticAssignedDriver_name']) ? $vehicle['staticAssignedDriver_name'] : null;
-    $tags_0_id = isset($vehicle['tags_0_id']) ? $vehicle['tags_0_id'] : null;
-    $tags_0_name = isset($vehicle['tags_0_name']) ? $vehicle['tags_0_name'] : null;
-    $tags_0_parentTagId = isset($vehicle['tags_0_parentTagId']) ? $vehicle['tags_0_parentTagId'] : null;
-    $vin = isset($vehicle['vin']) ? $vehicle['vin'] : null;
-    $year = isset($vehicle['year']) ? $vehicle['year'] : null;
-    $vehicleRegulationMode = isset($vehicle['vehicleRegulationMode']) ? $vehicle['vehicleRegulationMode'] : null;
+    $externalIds_samsara_serial = $vehicle['externalIds_samsara_serial'] ?? null;
+    $externalIds_samsara_vin = $vehicle['externalIds_samsara_vin'] ?? null;
+    $gateway_serial = $vehicle['gateway_serial'] ?? null;
+    $gateway_model = $vehicle['gateway_model'] ?? null;
+    $harshAccelerationSettingType = $vehicle['harshAccelerationSettingType'] ?? null;
+    $id = $vehicle['id'] ?? null;
+    $licensePlate = $vehicle['licensePlate'] ?? null;
+    $make = $vehicle['make'] ?? null;
+    $model = $vehicle['model'] ?? null;
+    $name = $vehicle['name'] ?? null;
+    $notes = $vehicle['notes'] ?? null;
+    $serial = $vehicle['serial'] ?? null;
+    $staticAssignedDriver_id = $vehicle['staticAssignedDriver_id'] ?? null;
+    $staticAssignedDriver_name = $vehicle['staticAssignedDriver_name'] ?? null;
+    $tags_0_id = $vehicle['tags_0_id'] ?? null;
+    $tags_0_name = $vehicle['tags_0_name'] ?? null;
+    $tags_0_parentTagId = $vehicle['tags_0_parentTagId'] ?? null;
+    $vin = $vehicle['vin'] ?? null;
+    $year = $vehicle['year'] ?? null;
+    $vehicleRegulationMode = $vehicle['vehicleRegulationMode'] ?? null;
     $createdAtTime = isset($vehicle['createdAtTime']) ? (new DateTime($vehicle['createdAtTime']))->format('Y-m-d H:i:s') : null;
     $updatedAtTime = isset($vehicle['updatedAtTime']) ? (new DateTime($vehicle['updatedAtTime']))->format('Y-m-d H:i:s') : null;
-    $esn = isset($vehicle['esn']) ? $vehicle['esn'] : null;
+    $esn = $vehicle['esn'] ?? null;
 
     // Bind parameters and execute the statement
     $stmt->bind_param(
@@ -112,7 +143,10 @@ foreach ($data['data'] as $vehicle) {
     );
 
     if (!$stmt->execute()) {
-        echo "Execute failed for record: " . json_encode($vehicle) . " Error: " . $stmt->error . "\n";
+        $errorMessage = "Execute failed for record: " . json_encode($vehicle) . " Error: " . $stmt->error;
+        logMessage($errorMessage);
+    } else {
+        logMessage("Record successfully inserted/updated: " . json_encode($vehicle));
     }
 }
 
@@ -120,5 +154,5 @@ foreach ($data['data'] as $vehicle) {
 $stmt->close();
 $conn->close();
 
-echo "Database updated successfully.";
+logMessage("Database updated successfully and connection closed.");
 ?>
