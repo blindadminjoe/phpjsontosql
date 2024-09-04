@@ -1,7 +1,7 @@
 <?php
 
 // Define the log file path
-$logFile = 'database_update.log';
+$logFile = '/var/log/joelogs/database_update.log';
 
 // Function to log messages with date and time
 function logMessage($message) {

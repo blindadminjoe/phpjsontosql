@@ -1,7 +1,7 @@
 <?php
 
 // Define the log file path
-$logFile = '1php.log';
+$logFile = '/var/log/joelogs/1php.log';
 
 // Function to log messages with date and time
 function logMessage($message) {
