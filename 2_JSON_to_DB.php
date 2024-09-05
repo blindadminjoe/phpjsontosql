@@ -1,7 +1,7 @@
 <?php
 
 // Define the log file path
-$logFile = '/var/log/joelogs/database_update.log';
+$logFile = '/var/log/joelogs/php_logs/database_update.log';
 
 // Function to log messages with date and time
 function logMessage($message) {
@@ -58,22 +58,21 @@ $stmt = $conn->prepare("
         externalIds_samsara_vin = VALUES(externalIds_samsara_vin),
         gateway_serial = VALUES(gateway_serial),
         gateway_model = VALUES(gateway_model),
-        harshaccelerationsettingtype = VALUES(harshAccelerationSettingType),
-        id = VALUES(id),
-        licenseplate = VALUES(licensePlate),
+        harshaccelerationsettingtype = VALUES(harshaccelerationsettingtype),
+        licenseplate = VALUES(licenseplate),
         make = VALUES(make),
         model = VALUES(model),
         name = VALUES(name),
         notes = VALUES(notes),
         serial = VALUES(serial),
-        staticassigneddriver_id = VALUES(staticAssignedDriver_id),
-        staticassigneddriver_name = VALUES(staticAssignedDriver_name),
+        staticassigneddriver_id = VALUES(staticassigneddriver_id),
+        staticassigneddriver_name = VALUES(staticassigneddriver_name),
         tags_0_id = VALUES(tags_0_id),
         tags_0_name = VALUES(tags_0_name),
         tags_0_parentTagId = VALUES(tags_0_parentTagId),
         vin = VALUES(vin),
         year = VALUES(year),
-        vehicleregulationmode = VALUES(vehicleRegulationMode),
+        vehicleregulationmode = VALUES(vehicleregulationmode),
         created_at_time = VALUES(created_at_time),
         updated_at_time = VALUES(updated_at_time),
         esn = VALUES(esn)

@@ -2,89 +2,120 @@
 // Database connection details
 require_once 'dbconnectconf.php';
 
+// Log directory and log file with today's date
+$logDir = '/var/log/joelogs/new_vehicles';
+$logFile = $logDir . '/new_' . date('Y-m-d') . '.log'; // Creates a log file named with today's date
+
+// Function to ensure the log directory exists
+function ensureLogDirExists($logDir) {
+    // Check if the log directory exists; if not, create it with appropriate permissions
+    if (!is_dir($logDir)) {
+        mkdir($logDir, 0777, true); // Creates directory recursively with permissions
+    }
+}
+
+// Function to log messages to the file only
+function logMessage($message) {
+    global $logFile;
+    // Append the message with a timestamp to the log file
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " - " . $message . PHP_EOL, FILE_APPEND);
+}
+
+// Custom exception handler function
+function customExceptionHandler($exception) {
+    $errorMessage = "Uncaught Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine();
+    file_put_contents('/var/log/joelogs/new_vehicles/error.log', date('Y-m-d H:i:s') . " - " . $errorMessage . PHP_EOL, FILE_APPEND);
+}
+
+// Set custom exception handler
+set_exception_handler("customExceptionHandler");
+
+
+// Ensure the log directory exists before proceeding
+ensureLogDirExists($logDir);
+
 // Create connection
 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    logMessage("Connection failed: " . $conn->connect_error);
+    die();
 }
 
-// File to keep track of the last timestamp or ID processed
-$trackingFile = 'new_vehicle_added/last_checked.txt';
+// Get the previous date (one day before the current date)
+$previousDate = date('Y-m-d', strtotime('-1 day')); // Format: 'YYYY-MM-DD'
+logMessage("Checking for updates on: $previousDate");
 
-// Check if the file exists
-if (!file_exists($trackingFile)) {
-    // If the file doesn't exist, create it with the current timestamp
-    $currentTimestamp = date('Y-m-d H:i:s'); // Format the current timestamp
-    file_put_contents($trackingFile, $currentTimestamp); // Write the current timestamp to the file
-    $lastChecked = $currentTimestamp; // Set the last checked timestamp to the current timestamp
-} else {
-    // Read the last checked timestamp or ID
-    $lastChecked = file_get_contents($trackingFile);
-}
-
-// Query to fetch new rows based on the 'created_at' column
-$sql = "SELECT * FROM vehicles_from_samsara WHERE created_at_time > ?";
+// Query to fetch rows updated on the previous day based on the 'created_at_time' column
+$sql = "SELECT * FROM vehicles_from_samsara WHERE DATE(created_at_time) = ?";
 $stmt = $conn->prepare($sql);
-$stmt->bind_param('s', $lastChecked);
+$stmt->bind_param('s', $previousDate);
 $stmt->execute();
 $result = $stmt->get_result();
 
 // Check if there are new rows
 if ($result->num_rows > 0) {
-    // Open CSV file for appending
-    $csvFile = fopen('new_vehicle_added/new_rows.csv', 'a');
+    logMessage("New updates found for the previous day.");
 
-    // Fetch and write each new row to CSV
-    while ($row = $result->fetch_assoc()) {
-        // Output the row to the CSV file
-        fputcsv($csvFile, $row);
+    // Prepare the insert query for vehicle_changes table
+    $insertSql = "INSERT INTO vehicle_changes (
+        externalIds_samsara_serial, externalIds_samsara_vin, gateway_serial, gateway_model, harshaccelerationsettingtype, id, licenseplate, make, model, name, notes, serial, staticassigneddriver_id, staticassigneddriver_name, tags_0_id, tags_0_name, tags_0_parentTagId, vin, year, vehicleregulationmode, created_at_time, updated_at_time, esn
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        // Update the last checked timestamp
-        $lastChecked = max($lastChecked, $row['created_at_time']);
-
-        // Get the 'name' value for the webhook message
-        $gatewayName = $row['name'];
-
-        // Prepare the webhook payload
-        $payload = [
-            'summary' => "A new gateway '$gatewayName' has been added to Samsara",
-            'text' => "A new gateway named '$gatewayName' has been added to Samsara."
-        ];
-
-        // Send a webhook notification
-        $webhookUrl = 'https://leecontracting.webhook.office.com/webhookb2/49d3d8c7-11e2-4a3e-855b-a62f96559bb3@75acc0bb-70b7-4cd5-974d-8cabff9dec52/IncomingWebhook/12a05c63918a443480bc1c3c9e68150a/99dbd767-0ed3-4932-bc9d-537c88871171'; // Replace with your actual webhook URL
-
-        // Convert the payload to JSON
-        $payloadJson = json_encode($payload);
-
-        // Send the webhook request
-        $ch = curl_init($webhookUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payloadJson);
-        $response = curl_exec($ch);
-
-        // Check for errors
-        if (curl_errno($ch)) {
-            error_log('Webhook error: ' . curl_error($ch));
-        }
-
-        // Close the curl session
-        curl_close($ch);
+    // Prepare statement for inserting into vehicle_changes
+    $insertStmt = $conn->prepare($insertSql);
+    if (!$insertStmt) {
+        logMessage("Error preparing insert statement: " . $conn->error);
+        die();
     }
 
-    fclose($csvFile);
+    // Fetch and insert each new row into the vehicle_changes table
+    while ($row = $result->fetch_assoc()) {
+        // Bind parameters and execute the statement
+        $insertStmt->bind_param(
+            "sssssissssssssssissssss",
+            $row['externalIds_samsara_serial'],
+            $row['externalIds_samsara_vin'],
+            $row['gateway_serial'],
+            $row['gateway_model'],
+            $row['harshAccelerationSettingType'],
+            $row['id'],
+            $row['licensePlate'],
+            $row['make'],
+            $row['model'],
+            $row['name'],
+            $row['notes'],
+            $row['serial'],
+            $row['staticAssignedDriver_id'],
+            $row['staticAssignedDriver_name'],
+            $row['tags_0_id'],
+            $row['tags_0_name'],
+            $row['tags_0_parentTagId'],
+            $row['vin'],
+            $row['year'],
+            $row['vehicleRegulationMode'],
+            $row['created_at_time'],
+            $row['updated_at_time'],
+            $row['esn']
+        );
 
-    // Update the tracking file with the latest timestamp
-    file_put_contents($trackingFile, $lastChecked);
+        // Execute the insert statement
+        if (!$insertStmt->execute()) {
+            logMessage("Error inserting row into vehicle_changes: " . $insertStmt->error);
+        } else {
+            logMessage("Inserted row into vehicle_changes for vehicle: " . $row['name']);
+        }
+    }
+
+    // Close the insert statement
+    $insertStmt->close();
 } else {
-    echo "No new rows found.\n";
+    logMessage("No new updates found for the previous day.");
 }
 
 // Close the database connection
 $stmt->close();
 $conn->close();
+logMessage("Database connection closed.");
 ?>
