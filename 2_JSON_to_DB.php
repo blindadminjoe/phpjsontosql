@@ -155,4 +155,5 @@ $stmt->close();
 $conn->close();
 
 logMessage("Database updated successfully and connection closed.");
+echo(date('Y-m-d H:i:s') . " - Database updated successfully and connection closed.");
 ?>
