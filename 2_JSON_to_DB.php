@@ -1,15 +1,10 @@
 <?php
 
-// Define the log file path
-$logFile = '/var/log/joelogs/php_logs/database_update.log';
+// Set the script name variable to identify this script in the logs
+$scriptName = 'vehicleJSON_to_DB'; // Adjust this to your specific script name
 
-// Function to log messages with date and time
-function logMessage($message) {
-    global $logFile;
-    $date = date('Y-m-d H:i:s');
-    $formattedMessage = "[$date] $message\n";
-    file_put_contents($logFile, $formattedMessage, FILE_APPEND);
-}
+// Include the logger functions
+require_once 'logger.php';
 
 // Database connection details
 require_once 'dbconnectconf.php';

@@ -1,33 +1,44 @@
 <?php
-
-// Log directory and log file with today's date
-$logDir = '/var/log/joelogs/?????';
-$logFile = $logDir . '/new_' . date('Y-m-d') . '.log'; // Creates a log file named with today's date
+// Declare a global variable to hold the script name; this must be set in each script that includes this file
+global $scriptName;
 
 // Function to ensure the log directory exists
 function ensureLogDirExists($logDir) {
-    // Check if the log directory exists; if not, create it with appropriate permissions
     if (!is_dir($logDir)) {
-        mkdir($logDir, 0777, true); // Creates directory recursively with permissions
+        mkdir($logDir, 0777, true); // Creates the directory recursively with permissions
     }
+}
+
+// Function to initialize logging settings based on the script name
+function initLogger() {
+    global $scriptName, $logDir, $logFile;
+    $scriptName = $scriptName ?? 'UnknownScript'; // Fallback in case $scriptName is not set
+    $logDir = "/var/log/joelogs/$scriptName"; // Directory named after the script
+    $logFile = $logDir . '/' . $scriptName . '_' . date('Y-m-d') . '.log'; // Log file with the script name and date
+    ensureLogDirExists($logDir); // Ensure the log directory exists
 }
 
 // Function to log messages to the file only
 function logMessage($message) {
-    global $logFile;
-    // Append the message with a timestamp to the log file
-    file_put_contents($logFile, date('Y-m-d H:i:s') . " - " . $message . PHP_EOL, FILE_APPEND);
+    global $logFile, $scriptName;
+    $scriptName = $scriptName ?? 'UnknownScript'; // Fallback in case $scriptName is not set
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " - [$scriptName] " . $message . PHP_EOL, FILE_APPEND);
 }
 
 // Custom exception handler function
 function customExceptionHandler($exception) {
-    $errorMessage = "Uncaught Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine();
-    file_put_contents('/var/log/joelogs/????/error.log', date('Y-m-d H:i:s') . " - " . $errorMessage . PHP_EOL, FILE_APPEND);
+    global $scriptName;
+    $scriptName = $scriptName ?? 'UnknownScript'; // Fallback in case $scriptName is not set
+    $errorDir = "/var/log/joelogs/$scriptName"; // Error log directory based on the script name
+    ensureLogDirExists($errorDir);
+    $errorLogFile = $errorDir . '/error.log';
+    $errorMessage = "Uncaught Exception in [$scriptName]: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine();
+    file_put_contents($errorLogFile, date('Y-m-d H:i:s') . " - " . $errorMessage . PHP_EOL, FILE_APPEND);
 }
 
-// Set custom exception handler
+// Set the custom exception handler
 set_exception_handler("customExceptionHandler");
 
-
-// Ensure the log directory exists before proceeding
-ensureLogDirExists($logDir);
+// Initialize the logger based on the script name
+initLogger();
+?>
