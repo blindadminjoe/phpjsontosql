@@ -1,33 +1,58 @@
 <?php
 
-// Paths to the PHP scripts and log files
+// Paths to the PHP scripts
 $script1 = '/home/joe/VehicleManagement/1.php';
-$logFile1 = '/var/log/joelogs/runner1.log';
 $script2 = '/home/joe/VehicleManagement/2.php';
-$logFile2 = '/var/log/joelogs/runner2.log';
+$script3 = '/home/joe/VehicleManagement/3.php';
 
-// Function to execute a PHP script and log its output
-function executeScript($script, $logFile) {
+// Log file path
+$logFile = '/var/log/joelogs/runner.log';
+
+// Function to log messages to runner.log
+function logMessage($message) {
+    global $logFile;
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " - " . $message . PHP_EOL, FILE_APPEND);
+}
+
+// Function to execute a PHP script and capture its output
+function executeScript($script) {
     // Prepare the command to run the PHP script
     $command = "php $script 2>&1";
     
-    // Execute the command and capture the output
+    // Execute the command and capture the output and return status
     $output = [];
     $returnVar = 0;
     exec($command, $output, $returnVar);
-    
-    // Log the output
-    file_put_contents($logFile, implode("\n", $output), FILE_APPEND);
-    
+
+    // Log output if there's an error
+    if ($returnVar !== 0) {
+        logMessage("Error running $script: " . implode("\n", $output));
+    }
+
     // Return whether the command was successful
     return $returnVar === 0;
 }
 
-// Run the first script and log its output
-if (executeScript($script1, $logFile1)) {
-    // If the first script executed successfully, run the second script
-    executeScript($script2, $logFile2);
+// Run the first script and check its success
+$script1Success = executeScript($script1);
+
+// Run the second script only if the first one was successful
+$script2Success = $script1Success ? executeScript($script2) : false;
+
+// Run the third script only if the first two scripts were successful
+$script3Success = ($script1Success && $script2Success) ? executeScript($script3) : false;
+
+// Log final success or failure message
+if ($script1Success && $script2Success && $script3Success) {
+    logMessage("All three scripts ran successfully.");
 } else {
-    // Handle error if needed
-    file_put_contents($logFile1, "Error running $script1\n", FILE_APPEND);
+    if (!$script1Success) {
+        logMessage("Error encountered in 1.php. Investigate further.");
+    }
+    if (!$script2Success) {
+        logMessage("Error encountered in 2.php. Investigate further.");
+    }
+    if (!$script3Success) {
+        logMessage("Error encountered in 3.php. Investigate further.");
+    }
 }
