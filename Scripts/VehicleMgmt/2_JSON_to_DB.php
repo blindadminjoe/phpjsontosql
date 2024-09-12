@@ -1,15 +1,10 @@
 <?php
 
-// Define the log file path
-$logFile = 'database_update.log';
+// Set the script name variable to identify this script in the logs
+$scriptName = 'vehicleJSON_to_DB'; // Adjust this to your specific script name
 
-// Function to log messages with date and time
-function logMessage($message) {
-    global $logFile;
-    $date = date('Y-m-d H:i:s');
-    $formattedMessage = "[$date] $message\n";
-    file_put_contents($logFile, $formattedMessage, FILE_APPEND);
-}
+// Include the logger functions
+require_once 'logger.php';
 
 // Database connection details
 require_once 'dbconnectconf.php';
@@ -58,22 +53,21 @@ $stmt = $conn->prepare("
         externalIds_samsara_vin = VALUES(externalIds_samsara_vin),
         gateway_serial = VALUES(gateway_serial),
         gateway_model = VALUES(gateway_model),
-        harshaccelerationsettingtype = VALUES(harshAccelerationSettingType),
-        id = VALUES(id),
-        licenseplate = VALUES(licensePlate),
+        harshaccelerationsettingtype = VALUES(harshaccelerationsettingtype),
+        licenseplate = VALUES(licenseplate),
         make = VALUES(make),
         model = VALUES(model),
         name = VALUES(name),
         notes = VALUES(notes),
         serial = VALUES(serial),
-        staticassigneddriver_id = VALUES(staticAssignedDriver_id),
-        staticassigneddriver_name = VALUES(staticAssignedDriver_name),
+        staticassigneddriver_id = VALUES(staticassigneddriver_id),
+        staticassigneddriver_name = VALUES(staticassigneddriver_name),
         tags_0_id = VALUES(tags_0_id),
         tags_0_name = VALUES(tags_0_name),
         tags_0_parentTagId = VALUES(tags_0_parentTagId),
         vin = VALUES(vin),
         year = VALUES(year),
-        vehicleregulationmode = VALUES(vehicleRegulationMode),
+        vehicleregulationmode = VALUES(vehicleregulationmode),
         created_at_time = VALUES(created_at_time),
         updated_at_time = VALUES(updated_at_time),
         esn = VALUES(esn)
@@ -155,4 +149,5 @@ $stmt->close();
 $conn->close();
 
 logMessage("Database updated successfully and connection closed.");
+echo(date('Y-m-d H:i:s') . " - Database updated successfully and connection closed.");
 ?>
