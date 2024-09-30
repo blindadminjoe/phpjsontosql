@@ -11,6 +11,10 @@ require_once('vendor/autoload.php');
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
+// Load the API token from configuration file
+$apiConfig = require 'apiconf.php';
+$samsaraApiToken = $apiConfig['samsara_api_token']; // Load token from config
+
 $client = new Client();
 
 try {
@@ -20,7 +24,7 @@ try {
     $response = $client->request('GET', 'https://api.samsara.com/fleet/drivers', [
         'headers' => [
             'accept' => 'application/json',
-            'authorization' => 'Bearer samsara_api_XXXXXXXXXXXXXX',
+            'authorization' => 'Bearer ' . $samsaraApiToken, // Use token from config
         ],
     ]);
 
@@ -53,20 +57,39 @@ if (!isset($data['data']) || !is_array($data['data'])) {
 
 logMessage("'data' key found and is an array.");
 
-// Function to flatten JSON and replace periods with underscores
+// Function to flatten JSON and replace periods and spaces with underscores
 function flattenArray($array, $prefix = '') {
     $flatArray = [];
+    
     foreach ($array as $key => $value) {
-        // Replace periods with underscores in the key
-        $newKey = str_replace('.', '_', $key);
+        // Replace periods and spaces with underscores in the key
+        $newKey = str_replace(['.', ' '], '_', $key);
 
+        // Check if the value is an array
         if (is_array($value)) {
-            // Recursively flatten the array
-            $flatArray = array_merge($flatArray, flattenArray($value, $prefix . $newKey . '_'));
+            // Handle attributes specifically if they are arrays with sub-values
+            if ($newKey === 'attributes') {
+                // Iterate through each attribute and use the attribute name as the key
+                foreach ($value as $index => $attribute) {
+                    if (isset($attribute['name'])) {
+                        // Use the attribute 'name' as part of the key
+                        $attributeName = str_replace(['.', ' '], '_', $attribute['name']);
+                        $flatArray = array_merge($flatArray, flattenArray($attribute, $prefix . 'attribute_' . $attributeName . '_'));
+                    } else {
+                        // Fallback to index if no name is available
+                        $flatArray = array_merge($flatArray, flattenArray($attribute, $prefix . 'attribute_' . $index . '_'));
+                    }
+                }
+            } else {
+                // Recursively flatten the array for non-attribute values
+                $flatArray = array_merge($flatArray, flattenArray($value, $prefix . $newKey . '_'));
+            }
         } else {
+            // Directly add the flattened key-value pair
             $flatArray[$prefix . $newKey] = $value;
         }
     }
+    
     return $flatArray;
 }
 
@@ -96,6 +119,6 @@ if (file_put_contents('drivers.json', $flattenedJson) === false) {
     die($errorMessage);
 }
 
-logMessage("JSON data has been flattened and saved to vehicles.json.");
+logMessage("JSON data has been flattened and saved to drivers.json.");
 echo "JSON data has been flattened and saved to drivers.json.";
 ?>
