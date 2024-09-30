@@ -11,6 +11,10 @@ require_once('vendor/autoload.php');
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
+// Load the API token from configuration file
+$apiConfig = require 'apiconf.php';
+$samsaraApiToken = $apiConfig['samsara_api_token']; // Load token from config
+
 $client = new Client();
 
 try {
@@ -20,7 +24,7 @@ try {
     $response = $client->request('GET', 'https://api.samsara.com/fleet/vehicles?limit=512', [
         'headers' => [
             'accept' => 'application/json',
-            'authorization' => 'Bearer samsara_api_XXXXXXXXXXXXXX',
+            'authorization' => 'Bearer ' . $samsaraApiToken, // Use token from config
         ],
     ]);
 

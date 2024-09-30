@@ -3,7 +3,7 @@
 require_once 'dbconnectconf.php'; // Ensure this file contains your DB connection details
 
 // URL of the webhook endpoint
-$webhookUrl = 'https://leecontracting.webhook.office.com/webhookb2/49d3d8c7-11e2-4a3e-855b-a62f96559bb3@75acc0bb-70b7-4cd5-974d-8cabff9dec52/IncomingWebhook/12a05c63918a443480bc1c3c9e68150a/99dbd767-0ed3-4932-bc9d-537c88871171'; // Replace with your actual URL endpoint
+$webhookUrl = 'https://leecontracting.webhook.office.com/webhookb2/49d3d8c7-11e2-4a3e-855b-a62f96559bb3@75acc0bb-70b7-4cd5-974d-8cabff9dec52/IncomingWebhook/2ca854d8bc3d4e95ae4a93208c12385c/99dbd767-0ed3-4932-bc9d-537c88871171'; // Replace with your actual URL endpoint
 
 // Connect to the database
 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
@@ -13,18 +13,24 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Query to fetch data from your table
-$sql = "SELECT * FROM vehicle_changes"; // Adjust the table name and query as needed
+// Query to fetch rows from the past day (last 24 hours)
+$sql = "SELECT * FROM samsara_new_vehicles WHERE created_at_time >= NOW() - INTERVAL 1 DAY"; // Adjust the column name if necessary
 $result = $conn->query($sql);
 
 // Check if rows exist
 if ($result->num_rows > 0) {
     // Iterate through each row and send data to the webhook
     while ($row = $result->fetch_assoc()) {
-        // Prepare data for the webhook, including required fields like "summary" or "text"
+        // Extract the necessary details from each row
+        $name = isset($row['name']) ? $row['name'] : 'Unknown Name';
+        $year = isset($row['year']) ? $row['year'] : 'Unknown Year';
+        $make = isset($row['make']) ? $row['make'] : 'Unknown Make';
+        $model = isset($row['model']) ? $row['model'] : 'Unknown Model';
+
+        // Prepare data for the webhook, including row values in the summary
         $payload = [
-            'summary' => 'New Vehicle in table.', // Replace with relevant summary
-            'text' => 'New Vehicle in table.', // Replace with relevant description
+            'summary' => "New Vehicle: $year $make $model (Name: $name)", // Dynamically include row data
+            'text' => "A new vehicle was added into Samsara within the past day: $year $make $model (Name: $name).", // Detailed description with the same row data
             'data' => $row, // Include the row data as part of the payload
         ];
 
@@ -38,7 +44,7 @@ if ($result->num_rows > 0) {
         echo "Webhook Response: " . $response . "\n";
     }
 } else {
-    echo "No rows found in the table.";
+    echo "No new rows found within the past day.";
 }
 
 // Close the database connection

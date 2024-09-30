@@ -45,6 +45,14 @@ if (!isset($dataArray['data']) || !is_array($dataArray['data'])) {
 $dataArray = $dataArray['data']; // Now $dataArray is an array of objects
 logMessage("Data extracted from JSON file.", 'info');
 
+// Remove all values from the samsara_drivers table
+$deleteSql = "DELETE FROM samsara_drivers";
+if (!$conn->query($deleteSql)) {
+    logMessage("Error deleting existing records: " . $conn->error, 'error');
+    die("Error deleting existing records: " . $conn->error);
+}
+logMessage("All existing records deleted from samsara_drivers.", 'info');
+
 // Prepare the SQL statement for updating data
 $columns = array_column($config, 'name');
 $updateSets = [];
@@ -59,7 +67,7 @@ foreach ($config as $column) {
 }
 $updateSets = implode(', ', $updateSets);
 
-$sql = "INSERT INTO drivers_from_samsara (" . implode(', ', $columns) . ") VALUES (" . implode(', ', array_fill(0, count($columns), '?')) . ") ON DUPLICATE KEY UPDATE $updateSets";
+$sql = "INSERT INTO samsara_drivers (" . implode(', ', $columns) . ") VALUES (" . implode(', ', array_fill(0, count($columns), '?')) . ") ON DUPLICATE KEY UPDATE $updateSets";
 $stmt = $conn->prepare($sql);
 
 // Check if the statement was prepared correctly
@@ -69,10 +77,12 @@ if (!$stmt) {
 }
 logMessage("Prepared statement successfully.", 'info');
 
+// Iterate over the data array
 foreach ($dataArray as $row) {
-    // Map JSON data to variables
+    // Map JSON data to variables, filtering by the column config
     $params = [];
     foreach ($columns as $col) {
+        // Only include values that exist in the JSON and match the config
         $value = isset($row[$col]) ? $row[$col] : null;
 
         // Convert datetime format if needed

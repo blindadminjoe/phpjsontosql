@@ -82,11 +82,11 @@ return [
         'type' => 's',
     ],
     [
-        'name' => 'created_at_time',
+        'name' => 'createdAtTime',
         'type' => 's',
     ],
     [
-        'name' => 'updated_at_time',
+        'name' => 'updatedAtTime',
         'type' => 's',
     ],
     [

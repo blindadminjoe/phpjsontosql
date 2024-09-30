@@ -50,6 +50,30 @@ return [
         'type' => 's',
     ],
     [
+        'name' => 'tags_1_id',
+        'type' => 's',
+    ],
+    [
+        'name' => 'tags_1_name',
+        'type' => 's',
+    ],
+    [
+        'name' => 'tags_1_parentTagId',
+        'type' => 's',
+    ],
+    [
+        'name' => 'tags_2_id',
+        'type' => 's',
+    ],
+    [
+        'name' => 'tags_2_name',
+        'type' => 's',
+    ],
+    [
+        'name' => 'tags_2_parentTagId',
+        'type' => 's',
+    ],
+    [
         'name' => 'staticAssignedVehicle_id',
         'type' => 's',
     ],
@@ -58,15 +82,27 @@ return [
         'type' => 's',
     ],
     [
-        'name' => 'attributes_0_id',
+        'name' => 'attribute_Driver_Authorization_Level_id',
         'type' => 's',
     ],
     [
-        'name' => 'attributes_0_name',
+        'name' => 'attribute_Driver_Authorization_Level_name',
         'type' => 's',
     ],
     [
-        'name' => 'attributes_0_stringValues_0',
+        'name' => 'attribute_Driver_Authorization_Level_stringValues_0',
+        'type' => 's',
+    ],
+    [
+        'name' => 'attribute_Department_id',
+        'type' => 's',
+    ],
+    [
+        'name' => 'attribute_Department_name',
+        'type' => 's',
+    ],
+    [
+        'name' => 'attribute_Department_stringValues_0',
         'type' => 's',
     ],
 ];
