@@ -3,7 +3,7 @@
 require_once 'dbconnectconf.php'; // Ensure this file contains your DB connection details
 
 // URL of the webhook endpoint
-$webhookUrl = 'https://leecontracting.webhook.office.com/webhookb2/49d3d8c7-11e2-4a3e-855b-a62f96559bb3@75acc0bb-70b7-4cd5-974d-8cabff9dec52/IncomingWebhook/2ca854d8bc3d4e95ae4a93208c12385c/99dbd767-0ed3-4932-bc9d-537c88871171'; // Replace with your actual URL endpoint
+$webhookUrl = 'https://leecontracting.webhook.office.com/webhook'; // Replace with your actual URL endpoint
 
 // Connect to the database
 $conn = new mysqli(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
